@@ -268,10 +268,9 @@
         border: none; border-radius: 12px;
         min-height: 52px; padding: 9px 20px;
         background: var(--black); color: var(--yellow-2);
-        display: inline-flex; flex-direction: column; align-items: center; line-height: 1.15;
+        font-size: 18px; font-weight: 900;
+        display: inline-flex; align-items: center; justify-content: center; line-height: 1.15;
       }
-      .advance-btn .darija { font-size: 18px; font-weight: 900; }
-      .advance-btn .fr { font-size: 12px; font-weight: 700; opacity: 0.85; }
       .advance-btn:active { transform: scale(0.98); }
       .cancel-btn {
         margin-inline-start: auto;
@@ -518,9 +517,9 @@
       var demoMode = !CONFIGURED;
 
       var STATUS_FLOW = {
-        "new":       { next: "preparing", btnDarija: "Kay-t-wjed", btnFr: "En préparation", chip: "Nouvelle" },
-        "preparing": { next: "ready",     btnDarija: "Wajda",      btnFr: "Prête",          chip: "En préparation" },
-        "ready":     { next: "served",    btnDarija: "T-sifat",    btnFr: "Servie",         chip: "Prête" },
+        "new":       { next: "preparing", btnFr: "En préparation", chip: "Nouvelle" },
+        "preparing": { next: "ready",     btnFr: "Prête",          chip: "En préparation" },
+        "ready":     { next: "served",    btnFr: "Servie",         chip: "Prête" },
         "served":    { next: null, chip: "Servie" },
         "cancelled": { next: null, chip: "✕ Annulée" }
       };
@@ -733,8 +732,7 @@
           foot = '<button class="cancel-btn' + (confirmingCancel ? ' confirm' : '') + '" type="button" data-cancel="' + esc(o._id) + '">' +
             (confirmingCancel ? 'Annuler cette commande ?' : '✕ Annuler') + '</button>' +
             '<button class="advance-btn" type="button" data-advance="' + esc(o._id) + '" data-next="' + flow.next + '">' +
-            '<span class="darija">' + esc(flow.btnDarija) + '</span>' +
-            '<span class="fr">' + esc(flow.btnFr) + '</span></button>';
+            esc(flow.btnFr) + '</button>';
         } else {
           // Finished orders only (served or cancelled): note + delete button. Active orders never get one.
           var confirmingDel = deleteConfirm[o._id] && (Date.now() - deleteConfirm[o._id] < 4000);
@@ -809,9 +807,9 @@
           });
           // Priorité : addition impayée > commande nouvelle > en préparation/prête > libre.
           var cls, label;
-          if (owed > 0) { cls = "owed"; label = "Khassha t-khls"; }
-          else if (hasNew) { cls = "new"; label = "Commande jdida"; }
-          else if (hasPrep) { cls = "prep"; label = "Kay-t-wjed"; }
+          if (owed > 0) { cls = "owed"; label = "En attente de paiement"; }
+          else if (hasNew) { cls = "new"; label = "Nouvelle commande"; }
+          else if (hasPrep) { cls = "prep"; label = "En préparation"; }
           else { cls = "free"; label = "Libre"; }
           var detail = [];
           if (owed > 0) detail.push(fmt(owed) + " DH à payer");

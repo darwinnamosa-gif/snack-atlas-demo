@@ -1,0 +1,1175 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="light" />
+    <link rel="icon" href="data:," />
+    <title>Snack Atlas — Comptoir · Commandes (DÉMO)</title>
+    <style>
+      :root {
+        --yellow:#F5A900; --yellow-2:#FFC93C; --yellow-soft:#FFF3D6;
+        --black:#2B1A12; --ink:#2B1A12; --muted:#8A6D4B; --dim:#A08A6B;
+        --paper:#F7ECD2; --cream:#241611; --panel:#F7ECD2;
+        --line:#E3D3AE; --line-dark:#C9A86A;
+        --green:#15803D; --green-soft:#DCFCE7;
+        --amber:#B45309; --amber-soft:#FEF3C7;
+        --red:#DC2626; --red-soft:#FEE2E2;
+        --radius: 16px;
+      }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; padding: 0; }
+      body {
+        background: var(--cream);
+        color: var(--ink);
+        font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+        min-height: 100vh;
+      }
+      button { font-family: inherit; cursor: pointer; }
+      [dir="auto"] { unicode-bidi: plaintext; }
+
+      /* ---------- DÉMO badge (visible on every demo page) ---------- */
+      .demo-badge{
+        display:inline-flex; align-items:center;
+        background:#C21807; color:#fff;
+        font-size:13px; font-weight:900; letter-spacing:.14em; text-transform:uppercase;
+        padding:6px 14px; border-radius:999px; border:2px solid #fff;
+        box-shadow:0 4px 16px rgba(0,0,0,.4); white-space:nowrap;
+      }
+
+      /* ---------- Top bar ---------- */
+      .topbar {
+        position: sticky; top: 0; z-index: 20;
+        display: flex; align-items: center; justify-content: space-between; gap: 12px;
+        padding: 10px 16px;
+        background: var(--black);
+        border-bottom: 3px solid var(--yellow);
+      }
+      .brand { display: flex; align-items: center; gap: 14px; min-width: 0; }
+      .brand-lockup { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+      .brand-icon-chip { background: var(--paper); border-radius: 50%; padding: 5px; border: 2px solid var(--yellow); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+      .brand-icon { height: 40px; width: auto; display: block; }
+      .brand-word { font-weight: 900; font-size: 1.15rem; line-height: 1.05; color: #F7ECD2; letter-spacing: .01em; white-space: nowrap; }
+      .brand-word .hl { background: var(--yellow); color: #2B1A12; padding: 2px 7px; border-radius: 7px; }
+      .brand-sub { font-size: 12.5px; color: #D8C9A8; font-weight: 700; }
+      .top-actions { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+      .conn {
+        display: inline-flex; align-items: center; gap: 8px;
+        padding: 7px 12px; border-radius: 999px;
+        border: 1px solid var(--line-dark); background: #F7ECD2;
+        font-size: 13px; font-weight: 700; white-space: nowrap;
+      }
+      .conn .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--dim); flex-shrink: 0; }
+      .conn.ok .dot { background: var(--green); box-shadow: 0 0 8px rgba(21, 128, 61, 0.8); }
+      .conn.bad .dot { background: var(--red); box-shadow: 0 0 8px rgba(220, 38, 38, 0.8); }
+      .conn.unconf .dot { background: var(--amber); }
+      .sound-btn {
+        display: inline-flex; align-items: center; gap: 8px;
+        padding: 8px 14px; border-radius: 999px; min-height: 38px;
+        border: 1px solid var(--line-dark); background: #F7ECD2;
+        color: var(--ink); font-size: 13.5px; font-weight: 800;
+      }
+      .sound-btn svg { width: 19px; height: 19px; flex-shrink: 0; }
+      .sound-btn.off { color: var(--dim); }
+      .sound-btn .ico-off { display: none; }
+      .sound-btn.off .ico-on { display: none; }
+      .sound-btn.off .ico-off { display: block; }
+
+      /* ---------- Config banner ---------- */
+      .config-banner {
+        margin: 14px 16px 0; padding: 14px 16px;
+        border: 2px solid var(--yellow); border-radius: var(--radius);
+        background: var(--yellow-soft);
+        font-size: 14.5px; line-height: 1.55;
+      }
+      .config-banner strong { color: var(--amber); }
+      .config-banner code {
+        background: #F7ECD2; padding: 1px 7px; border-radius: 6px;
+        font-size: 13px; direction: ltr; display: inline-block;
+      }
+
+      /* ---------- Statistics strip (always visible, even with zero orders) ---------- */
+      .stats-strip { max-width: 1440px; margin: 16px auto 0; padding: 0 16px; }
+      .stats-title { margin: 0 0 10px; font-size: 18px; font-weight: 900; color: var(--black); }
+      .stats-grid {
+        display: grid; grid-template-columns: repeat(7, 1fr); gap: 10px;
+      }
+      @media (max-width: 1100px) { .stats-grid { grid-template-columns: repeat(4, 1fr); } }
+      @media (max-width: 640px) { .stats-grid { grid-template-columns: repeat(2, 1fr); } }
+      .stat-card {
+        background: #F7ECD2; border: 1px solid var(--line); border-radius: 14px;
+        border-top: 4px solid var(--yellow);
+        padding: 12px 12px 10px; box-shadow: 0 2px 8px rgba(17,17,17,.05);
+      }
+      .stat-card.stat-money { border-top-color: var(--black); }
+      .stat-val { font-size: 26px; font-weight: 900; color: var(--black); line-height: 1.1; white-space: nowrap; }
+      .stat-lbl { font-size: 12px; font-weight: 800; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; margin-top: 3px; }
+
+      /* ---------- Layout ---------- */
+      .layout {
+        display: grid; grid-template-columns: minmax(0, 1fr) 348px;
+        gap: 18px; padding: 16px; max-width: 1440px; margin: 0 auto;
+        align-items: start;
+      }
+      @media (max-width: 980px) {
+        .layout { grid-template-columns: minmax(0, 1fr); }
+        .bills { order: -1; }
+      }
+
+      /* ---------- Bills panel ---------- */
+      .bills {
+        background: var(--panel); border: 1px solid var(--line);
+        border-radius: var(--radius); padding: 16px;
+        position: sticky; top: 76px; box-shadow: 0 2px 8px rgba(17,17,17,.05);
+      }
+      @media (max-width: 980px) { .bills { position: static; } }
+      .bills h2 { margin: 0; font-size: 18px; font-weight: 900; }
+      .bills .bills-sub { color: var(--muted); font-size: 13px; font-weight: 600; margin: 2px 0 12px; }
+      .bills-total {
+        display: flex; justify-content: space-between; align-items: baseline;
+        padding: 10px 12px; margin-bottom: 12px;
+        background: var(--yellow-soft); border: 1px solid var(--yellow); border-radius: 12px;
+      }
+      .bills-total .lbl { font-size: 13px; font-weight: 700; color: var(--muted); }
+      .bills-total .val { font-size: 22px; font-weight: 900; color: var(--black); }
+      .bills-grid { display: grid; grid-template-columns: 1fr; gap: 10px; }
+      @media (max-width: 980px) { .bills-grid { grid-template-columns: repeat(2, 1fr); } }
+      @media (max-width: 420px) { .bills-grid { grid-template-columns: 1fr; } }
+      .bill-card {
+        display: flex; align-items: center; gap: 10px;
+        padding: 10px 12px; border-radius: 12px;
+        background: var(--paper); border: 1px solid var(--line);
+      }
+      .bill-card.owes { border-color: var(--yellow); background: var(--yellow-soft); }
+      .bill-info { flex: 1; min-width: 0; }
+      .bill-table { font-size: 15.5px; font-weight: 900; display: flex; align-items: center; gap: 7px; }
+      .bill-table .live-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--yellow); box-shadow: 0 0 7px rgba(245,169,0,.9); }
+      .bill-detail { font-size: 12px; color: var(--dim); font-weight: 600; margin-top: 1px; }
+      .bill-amount { font-size: 19px; font-weight: 900; white-space: nowrap; }
+      .bill-amount.zero { color: var(--dim); font-size: 15px; }
+      .pay-btn {
+        border: none; border-radius: 10px; min-height: 42px; padding: 8px 14px;
+        font-size: 14px; font-weight: 900; white-space: nowrap;
+        background: var(--black); color: var(--yellow-2);
+      }
+      .pay-btn:disabled { background: #EFEFEF; color: var(--dim); border: 1px solid var(--line); cursor: default; }
+      .pay-btn.confirm { background: var(--green); color: #fff; }
+
+      /* ---------- Top plats ---------- */
+      .topplats { margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--line); }
+      .topplats h2 { margin: 0; font-size: 18px; font-weight: 900; }
+      .topplats .bills-sub { color: var(--muted); font-size: 13px; font-weight: 600; margin: 2px 0 12px; }
+      .tp-row {
+        display: flex; align-items: center; gap: 10px;
+        padding: 9px 12px; margin-bottom: 8px;
+        background: var(--paper); border: 1px solid var(--line); border-radius: 10px;
+      }
+      .tp-rank {
+        width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0;
+        background: var(--black); color: var(--yellow-2);
+        font-size: 14px; font-weight: 900;
+        display: flex; align-items: center; justify-content: center;
+      }
+      .tp-name { flex: 1; min-width: 0; font-size: 15px; font-weight: 800; }
+      .tp-name small { display: block; font-size: 12.5px; color: var(--dim); font-weight: 600; }
+      .tp-qty { font-size: 15px; font-weight: 900; color: var(--black); white-space: nowrap; }
+      .tp-empty { color: var(--dim); font-size: 14px; font-weight: 700; padding: 6px 2px; }
+
+      /* ---------- Filter tabs ---------- */
+      .tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+      .tab {
+        border: 1px solid var(--line-dark); background: #F7ECD2; color: var(--muted);
+        border-radius: 999px; padding: 8px 15px; min-height: 40px;
+        font-size: 14px; font-weight: 800; display: inline-flex; align-items: center; gap: 7px;
+      }
+      .tab .count {
+        background: var(--yellow-soft); border-radius: 999px; padding: 0 8px;
+        font-size: 12.5px; font-weight: 900; color: var(--black); line-height: 20px;
+      }
+      .tab.active {
+        background: var(--black);
+        color: var(--yellow-2); border-color: var(--black);
+      }
+      .tab.active .count { background: var(--yellow); color: var(--black); }
+
+      /* ---------- Order cards ---------- */
+      .orders-list { display: grid; gap: 14px; }
+      .card {
+        background: #F7ECD2; border: 1px solid var(--line);
+        border-radius: var(--radius); padding: 16px;
+        border-top: 4px solid var(--dim); box-shadow: 0 2px 8px rgba(17,17,17,.05);
+      }
+      .card.st-new { border-top-color: var(--yellow); }
+      .card.st-preparing { border-top-color: #D97706; }
+      .card.st-ready { border-top-color: var(--green); }
+      .card.st-served { border-top-color: var(--dim); }
+      .card.st-cancelled { border-top-color: var(--red); }
+      @keyframes flashRing {
+        0%, 100% { box-shadow: 0 0 0 0 rgba(245, 169, 0, 0); }
+        50% { box-shadow: 0 0 0 3px rgba(245, 169, 0, 0.95), 0 0 34px rgba(245, 169, 0, 0.4); }
+      }
+      .card.flash { animation: flashRing 0.85s ease-in-out 5; border-color: var(--yellow); }
+      .card-head { display: flex; align-items: flex-start; gap: 10px; flex-wrap: wrap; }
+      .table-num { font-size: 27px; font-weight: 900; line-height: 1.1; }
+      .table-main { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; }
+      .mode-badge {
+        display: inline-flex; align-items: center; gap: 5px;
+        font-size: 13.5px; font-weight: 900; line-height: 1;
+        padding: 6px 11px; border-radius: 999px; white-space: nowrap;
+        border: 1px solid var(--line-dark);
+      }
+      .mode-badge.surplace { background: #F7ECD2; color: var(--muted); border-color: var(--line-dark); }
+      .mode-badge.emporter {
+        background: var(--yellow);
+        color: var(--black); border-color: transparent;
+        box-shadow: 0 2px 12px rgba(245, 169, 0, 0.45);
+      }
+      .card-meta { margin-inline-start: auto; text-align: end; }
+      .card-time { font-size: 16px; font-weight: 800; }
+      .card-elapsed { font-size: 12.5px; color: var(--dim); font-weight: 700; }
+      .chip {
+        display: inline-flex; align-items: center; gap: 6px;
+        font-size: 12.5px; font-weight: 900; padding: 4px 11px; border-radius: 999px;
+        border: 1px solid var(--line-dark); color: var(--muted); white-space: nowrap;
+      }
+      .chip .dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+      .chip.st-new { color: var(--amber); border-color: rgba(180, 83, 9, 0.55); }
+      .chip.st-new .dot { animation: pulse 1.1s ease-in-out infinite; }
+      .chip.st-preparing { color: var(--amber); border-color: rgba(180, 83, 9, 0.5); }
+      .chip.st-ready { color: var(--green); border-color: rgba(21, 128, 61, 0.5); }
+      .chip.st-served { color: var(--dim); }
+      .chip.st-cancelled { color: var(--red); border-color: rgba(220, 38, 38, 0.55); }
+      .chip.paid { color: var(--green); border-color: rgba(21, 128, 61, 0.5); }
+      .chip.demo { color: var(--yellow-2); background: var(--black); border-color: transparent; }
+      @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.25; } }
+      .items { list-style: none; margin: 12px 0 0; padding: 0; }
+      .items li {
+        display: flex; align-items: baseline; gap: 10px;
+        padding: 7px 0; border-bottom: 1px dashed var(--line);
+        font-size: 16.5px;
+      }
+      .items li:last-child { border-bottom: none; }
+      .qty {
+        font-weight: 900; color: var(--black); font-size: 15px;
+        background: var(--yellow-soft); border-radius: 8px; padding: 1px 8px;
+        white-space: nowrap;
+      }
+      .iname { flex: 1; min-width: 0; font-weight: 700; }
+      .iname small { display: block; font-size: 12.5px; color: var(--dim); font-weight: 600; }
+      .iprice { font-weight: 800; white-space: nowrap; }
+      .iprice small { color: var(--dim); font-weight: 600; font-size: 12px; }
+      .card-foot {
+        display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+        margin-top: 13px; padding-top: 13px; border-top: 1px solid var(--line);
+      }
+      .total { font-size: 15px; color: var(--muted); font-weight: 700; }
+      .total strong { font-size: 23px; font-weight: 900; color: var(--ink); margin-inline-start: 4px; }
+      .advance-btn {
+        border: none; border-radius: 12px;
+        min-height: 52px; padding: 9px 20px;
+        background: var(--black); color: var(--yellow-2);
+        display: inline-flex; flex-direction: column; align-items: center; line-height: 1.15;
+      }
+      .advance-btn .darija { font-size: 18px; font-weight: 900; }
+      .advance-btn .fr { font-size: 12px; font-weight: 700; opacity: 0.85; }
+      .advance-btn:active { transform: scale(0.98); }
+      .cancel-btn {
+        margin-inline-start: auto;
+        border: 1px solid rgba(220, 38, 38, 0.5); background: transparent;
+        color: var(--red); border-radius: 10px; min-height: 44px; padding: 8px 14px;
+        font-size: 14px; font-weight: 900; white-space: nowrap;
+      }
+      .cancel-btn.confirm { background: var(--red); color: #fff; white-space: normal; }
+      .served-note { margin-inline-start: auto; font-size: 13.5px; font-weight: 800; color: var(--dim); }
+
+      .empty {
+        text-align: center; padding: 44px 20px; color: var(--dim);
+        border: 1px dashed var(--line-dark); border-radius: var(--radius);
+        font-size: 16px; font-weight: 700; background: #F7ECD2;
+      }
+      .empty .big { font-size: 20px; color: var(--muted); font-weight: 900; margin-bottom: 4px; }
+
+      /* ---------- Terminées ---------- */
+      .done { margin-top: 22px; }
+      .done-toggle {
+        width: 100%; display: flex; align-items: center; gap: 10px;
+        background: #F7ECD2; border: 1px solid var(--line-dark); border-radius: 12px;
+        color: var(--muted); padding: 12px 16px; min-height: 48px;
+        font-size: 15.5px; font-weight: 900; text-align: start;
+      }
+      .done-toggle .chev { margin-inline-start: auto; transition: transform 0.2s; font-size: 13px; }
+      .done.open .done-toggle .chev { transform: rotate(180deg); }
+      .done-body { display: none; margin-top: 12px; }
+      .done.open .done-body { display: grid; gap: 12px; }
+      .done .card { opacity: 0.88; }
+      .done .card.is-paid { opacity: 0.55; }
+      .done-head { display: flex; gap: 10px; flex-wrap: wrap; align-items: stretch; }
+      .done-head .done-toggle { flex: 1 1 220px; width: auto; }
+      .clear-all-btn {
+        border: 1px solid rgba(220, 38, 38, 0.55); background: #F7ECD2;
+        color: var(--red); border-radius: 12px; min-height: 48px; padding: 10px 16px;
+        font-size: 14px; font-weight: 900; white-space: nowrap;
+      }
+      .clear-all-btn.confirm { background: var(--red); color: #fff; white-space: normal; }
+      .delete-btn {
+        border: 1px solid rgba(220, 38, 38, 0.5); background: transparent;
+        color: var(--red); border-radius: 10px; min-height: 40px; padding: 7px 13px;
+        font-size: 13.5px; font-weight: 900; white-space: nowrap;
+      }
+      .delete-btn.confirm { background: var(--red); color: #fff; white-space: normal; }
+
+      /* ---------- Order note ---------- */
+      .order-note {
+        margin-top: 10px; padding: 9px 12px;
+        background: var(--yellow-soft);
+        border: 1px solid var(--yellow);
+        border-radius: 10px;
+        color: var(--amber); font-size: 15.5px; font-weight: 800;
+        overflow-wrap: break-word;
+      }
+
+      /* ---------- Tables panel ---------- */
+      .tables-panel { margin-bottom: 18px; padding-bottom: 16px; border-bottom: 1px solid var(--line); }
+      .tables-panel h2 { margin: 0; font-size: 18px; font-weight: 900; }
+      .tables-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+      @media (max-width: 980px) { .tables-grid { grid-template-columns: repeat(3, 1fr); } }
+      @media (max-width: 420px) { .tables-grid { grid-template-columns: repeat(2, 1fr); } }
+      .table-tile {
+        border-radius: 12px; padding: 10px 12px;
+        background: var(--paper); border: 1px solid var(--line);
+      }
+      .table-tile .tt-num { font-size: 15.5px; font-weight: 900; }
+      .table-tile .tt-state { font-size: 13.5px; font-weight: 900; margin-top: 1px; }
+      .table-tile .tt-detail { font-size: 12px; color: var(--muted); font-weight: 700; margin-top: 2px; }
+      .table-tile.st-free { border-color: rgba(21, 128, 61, 0.35); }
+      .table-tile.st-free .tt-state { color: var(--green); }
+      .table-tile.st-new { border-color: rgba(245, 169, 0, 0.65); background: var(--yellow-soft); }
+      .table-tile.st-new .tt-state { color: var(--amber); }
+      .table-tile.st-prep { border-color: rgba(217, 119, 6, 0.55); background: var(--amber-soft); }
+      .table-tile.st-prep .tt-state { color: var(--amber); }
+      .table-tile.st-owed { border-color: rgba(220, 38, 38, 0.6); background: var(--red-soft); }
+      .table-tile.st-owed .tt-state { color: var(--red); }
+
+      /* ---------- Disponibilité ---------- */
+      .avail { margin-top: 22px; }
+      .avail-toggle {
+        width: 100%; display: flex; align-items: center; gap: 10px;
+        background: #F7ECD2; border: 1px solid var(--line-dark); border-radius: 12px;
+        color: var(--muted); padding: 12px 16px; min-height: 48px;
+        font-size: 15.5px; font-weight: 900; text-align: start;
+      }
+      .avail-toggle .chev { margin-inline-start: auto; transition: transform 0.2s; font-size: 13px; }
+      .avail.open .avail-toggle .chev { transform: rotate(180deg); }
+      .avail-body { display: none; margin-top: 12px; }
+      .avail.open .avail-body { display: block; }
+      .avail-cat { margin-bottom: 16px; }
+      .avail-cat:last-child { margin-bottom: 0; }
+      .avail-cat-name { font-size: 15px; font-weight: 900; color: var(--black); margin-bottom: 7px; }
+      .avail-row {
+        display: flex; align-items: center; gap: 10px;
+        padding: 7px 8px 7px 12px; margin-bottom: 6px;
+        background: #F7ECD2; border: 1px solid var(--line); border-radius: 10px;
+      }
+      .avail-row.is-out { background: #F5F5F5; }
+      .avail-row.is-out .avail-name { color: var(--dim); }
+      .avail-name { flex: 1; min-width: 0; font-size: 15.5px; font-weight: 700; }
+      .avail-name-ar { display: block; font-size: 12.5px; color: var(--dim); font-weight: 600; }
+      .avail-name small { display: block; font-size: 12.5px; color: var(--dim); font-weight: 600; }
+      .avail-btn {
+        border-radius: 999px; padding: 7px 14px; min-height: 38px; flex-shrink: 0;
+        font-size: 13.5px; font-weight: 900; border: 1px solid; white-space: nowrap;
+      }
+      .avail-btn.on { color: var(--green); border-color: rgba(21, 128, 61, 0.55); background: var(--green-soft); }
+      .avail-btn.off { color: var(--red); border-color: rgba(220, 38, 38, 0.6); background: var(--red-soft); }
+
+      .foot-note { text-align: center; color: var(--dim); font-size: 12.5px; font-weight: 600; padding: 8px 16px 26px; }
+
+      @media (max-width: 560px) {
+        .topbar { flex-wrap: wrap; }
+        .brand-icon { height: 34px; } .brand-word { font-size: 1rem; }
+        .top-actions { width: 100%; justify-content: space-between; }
+      }
+
+</style>
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-lockup"><span class="brand-icon-chip"><img class="brand-icon" src="logo-raha-icon.png" alt="" /></span><span class="brand-word">SNACK <span class="hl">ATLAS</span></span></div>
+        <div class="brand-sub">Comptoir — Commandes en direct · Démonstration</div>
+      </div>
+      <div class="top-actions">
+        <span class="demo-badge">DÉMO</span>
+        <span class="conn unconf" id="connStatus"><span class="dot"></span><span id="connText">Connexion…</span></span>
+        <button class="sound-btn" id="soundToggle" type="button" aria-label="Activer ou couper le son des nouvelles commandes">
+          <svg class="ico-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4V5z" fill="currentColor" stroke="none"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9.4 9.4 0 0 1 0 13"/></svg>
+          <svg class="ico-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4V5z" fill="currentColor" stroke="none"/><line x1="16" y1="9" x2="22" y2="15"/><line x1="22" y1="9" x2="16" y2="15"/></svg>
+          <span id="soundLabel">Son activé</span>
+        </button>
+      </div>
+    </header>
+
+    <div class="config-banner" id="configBanner" hidden>
+      <strong>Firebase non configuré.</strong>
+      Ce tableau attend la configuration Firebase : collez les vraies valeurs dans le bloc
+      <code>FIREBASE_CONFIG</code> en haut du script de cette page, puis rechargez.
+      En attendant, les cartes ci-dessous sont une <strong>démo</strong> pour prévisualiser l'affichage — aucune commande réelle n'arrive ici.
+    </div>
+
+    <section class="stats-strip" aria-label="Statistiques du jour">
+      <h2 class="stats-title">Statistiques — aujourd'hui</h2>
+      <div class="stats-grid">
+        <div class="stat-card"><div class="stat-val" id="statOrders">0</div><div class="stat-lbl">Commandes</div></div>
+        <div class="stat-card"><div class="stat-val" id="statPreparing">0</div><div class="stat-lbl">En préparation</div></div>
+        <div class="stat-card"><div class="stat-val" id="statReady">0</div><div class="stat-lbl">Prêtes</div></div>
+        <div class="stat-card"><div class="stat-val" id="statServed">0</div><div class="stat-lbl">Servies</div></div>
+        <div class="stat-card"><div class="stat-val" id="statCancelled">0</div><div class="stat-lbl">Annulées</div></div>
+        <div class="stat-card stat-money"><div class="stat-val" id="statTotal">0 DH</div><div class="stat-lbl">Total DH</div></div>
+        <div class="stat-card stat-money"><div class="stat-val" id="statPaid">0 DH</div><div class="stat-lbl">Payé DH</div></div>
+      </div>
+    </section>
+
+    <main class="layout">
+      <section aria-label="Commandes">
+        <nav class="tabs" id="tabs" aria-label="Filtrer les commandes"></nav>
+        <div class="orders-list" id="ordersList"></div>
+        <div class="empty" id="emptyState" hidden>
+          <div class="big">Aucune commande ici</div>
+          <div>Les nouvelles commandes apparaîtront automatiquement, sans recharger la page.</div>
+        </div>
+
+        <section class="done" id="doneSection" hidden>
+          <div class="done-head">
+            <button class="done-toggle" id="doneToggle" type="button">
+              Terminées — servies <span id="doneCount"></span>
+              <span class="chev">▼</span>
+            </button>
+            <button class="clear-all-btn" id="clearAllBtn" type="button">🗑 Tout effacer</button>
+          </div>
+          <div class="done-body" id="doneBody"></div>
+        </section>
+
+        <section class="avail" id="availSection">
+          <button class="avail-toggle" id="availToggle" type="button">
+            Disponibilité des plats <span id="availCount"></span>
+            <span class="chev">▼</span>
+          </button>
+          <div class="avail-body" id="availBody"></div>
+        </section>
+      </section>
+
+      <aside class="bills" aria-label="Additions par table">
+        <div class="tables-panel">
+          <h2>Tables</h2>
+          <p class="bills-sub">État de chaque table en direct.</p>
+          <div class="tables-grid" id="tablesGrid"></div>
+        </div>
+        <h2>Additions par table</h2>
+        <p class="bills-sub">Commandes servies, pas encore payées — le client paie au comptoir après le repas.</p>
+        <div class="bills-total">
+          <span class="lbl">Total à encaisser</span>
+          <span class="val" id="billsGrandTotal">0 DH</span>
+        </div>
+        <div class="bills-grid" id="billsGrid"></div>
+
+        <div class="topplats">
+          <h2>Top plats</h2>
+          <p class="bills-sub">Plats les plus servis aujourd'hui (commandes servies uniquement).</p>
+          <div id="topPlatsList"></div>
+        </div>
+      </aside>
+    </main>
+
+    <p class="foot-note">Snack Atlas — Démonstration du système de commande par QR code · Les commandes se mettent à jour en temps réel.</p>
+
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+    <script>
+      /* ============================================================
+         FIREBASE_CONFIG — projet Firebase de démonstration.
+         La démo n'utilise QUE les nœuds demo-orders, demo-availability
+         et demo-cancelled. JAMAIS les nœuds live /orders,
+         /availability, /calls ou /cancelled.
+         ============================================================ */
+      var FIREBASE_CONFIG = {
+        apiKey: "AIzaSyDz8e2BUfNhCl3e_E449nMtZsYA47TDFKg",
+        authDomain: "thon-3s-orders.firebaseapp.com",
+        databaseURL: "https://thon-3s-orders-default-rtdb.europe-west1.firebasedatabase.app",
+        projectId: "thon-3s-orders",
+        storageBucket: "thon-3s-orders.firebasestorage.app",
+        messagingSenderId: "60533964819",
+        appId: "1:60533964819:web:5e5f8fced88484f55cbfe6"
+      };
+
+      var CONFIGURED = FIREBASE_CONFIG.apiKey && FIREBASE_CONFIG.apiKey !== "PASTE_API_KEY_HERE";
+
+      /* ---------------- State ---------------- */
+      var orders = {};            // id -> order
+      var currentFilter = "all";
+      var soundOn = true;
+      var audioCtx = null;
+      var firstSyncDone = false;
+      var knownIds = {};
+      var flashIds = {};          // ids that should flash on next render
+      var payConfirm = {};        // table -> timestamp of first tap
+      var deleteConfirm = {};     // order id -> timestamp of first tap
+      var cancelConfirm = {};     // order id -> timestamp of first tap
+      var clearAllConfirmTs = 0;  // timestamp of first tap on "Tout effacer"
+      var demoMode = !CONFIGURED;
+
+      var STATUS_FLOW = {
+        "new":       { next: "preparing", btnDarija: "Kay-t-wjed", btnFr: "En préparation", chip: "Nouvelle" },
+        "preparing": { next: "ready",     btnDarija: "Wajda",      btnFr: "Prête",          chip: "En préparation" },
+        "ready":     { next: "served",    btnDarija: "T-sifat",    btnFr: "Servie",         chip: "Prête" },
+        "served":    { next: null, chip: "Servie" },
+        "cancelled": { next: null, chip: "✕ Annulée" }
+      };
+      /* Menu — mêmes identifiants que la page de commande (nœud demo-availability/<id>). */
+      var MENU = [
+        { id: "sandwichs", fr: "Sandwichs", items: [
+          { id: "thon", name: "Thon", name_ar: "ساندويتش التونة" },
+          { id: "poulet-grille", name: "Poulet grillé", name_ar: "ساندويتش الدجاج المشوي" },
+          { id: "viande-hachee", name: "Viande hachée", name_ar: "ساندويتش اللحم المفروم" },
+          { id: "kefta", name: "Kefta", name_ar: "ساندويتش الكفتة" },
+          { id: "merguez", name: "Merguez", name_ar: "ساندويتش المرقاز" },
+          { id: "cheese", name: "Cheese", name_ar: "ساندويتش الجبن" }
+        ]},
+        { id: "tacos", fr: "Tacos", items: [
+          { id: "tacos-poulet-m", name: "Tacos poulet M", name_ar: "طاكوس الدجاج (صغير)" },
+          { id: "tacos-poulet-l", name: "Tacos poulet L", name_ar: "طاكوس الدجاج (كبير)" },
+          { id: "tacos-viande-m", name: "Tacos viande M", name_ar: "طاكوس اللحم (صغير)" },
+          { id: "tacos-viande-l", name: "Tacos viande L", name_ar: "طاكوس اللحم (كبير)" },
+          { id: "tacos-mixte-l", name: "Tacos mixte L", name_ar: "طاكوس مشكل (كبير)" }
+        ]},
+        { id: "burgers", fr: "Burgers", items: [
+          { id: "cheese-burger", name: "Cheese burger", name_ar: "تشيز برجر" },
+          { id: "chicken-burger", name: "Chicken burger", name_ar: "تشيكن برجر" },
+          { id: "double-cheese", name: "Double cheese", name_ar: "دبل تشيز برجر" }
+        ]},
+        { id: "pizzas", fr: "Pizzas", items: [
+          { id: "pizza-margherita", name: "Margherita", name_ar: "بيتزا مارغريتا" },
+          { id: "pizza-4-fromages", name: "4 fromages", name_ar: "بيتزا أربعة أجبان" },
+          { id: "pizza-poulet", name: "Poulet", name_ar: "بيتزا الدجاج" },
+          { id: "pizza-thon", name: "Thon", name_ar: "بيتزا التونة" }
+        ]},
+        { id: "salades", fr: "Salades", items: [
+          { id: "salade-cesar", name: "César", name_ar: "سلطة سيزار" },
+          { id: "salade-nicoise", name: "Niçoise", name_ar: "سلطة نيسواز" },
+          { id: "salade-thon", name: "Thon", name_ar: "سلطة التونة" }
+        ]},
+        { id: "paninis", fr: "Paninis", items: [
+          { id: "panini-poulet", name: "Poulet", name_ar: "بانيني الدجاج" },
+          { id: "panini-thon", name: "Thon", name_ar: "بانيني التونة" },
+          { id: "panini-3-fromages", name: "3 fromages", name_ar: "بانيني ثلاثة أجبان" }
+        ]},
+        { id: "boissons", fr: "Boissons", items: [
+          { id: "soda", name: "Soda", name_ar: "مشروب غازي" },
+          { id: "eau", name: "Eau", name_ar: "ماء معدني" },
+          { id: "jus-frais", name: "Jus frais", name_ar: "عصير طازج" },
+          { id: "cafe", name: "Café", name_ar: "قهوة" }
+        ]},
+        { id: "desserts", fr: "Desserts", items: [
+          { id: "tiramisu", name: "Tiramisu", name_ar: "تيراميسو" },
+          { id: "tarte-du-jour", name: "Tarte du jour", name_ar: "طارطة اليوم" }
+        ]}
+      ];
+      var DISH_BY_ID = {};
+      var DISH_BY_NAME = {};
+      MENU.forEach(function(c){ c.items.forEach(function(i){
+        DISH_BY_ID[i.id] = i;
+        if (DISH_BY_NAME[i.name] === undefined) DISH_BY_NAME[i.name] = i;
+        else if (DISH_BY_NAME[i.name]) DISH_BY_NAME[i.name] = null;
+      }); });
+      var availability = {};      // itemId -> bool (absent = disponible)
+      var cancelled = {};       // id -> snapshot annulé (nœud demo-cancelled, historique stats)
+      var availRef = null;
+
+      var FILTERS = [
+        { key: "all",       label: "Toutes" },
+        { key: "new",       label: "Nouvelles" },
+        { key: "preparing", label: "En préparation" },
+        { key: "ready",     label: "Prêtes" },
+        { key: "served",    label: "Servies" },
+        { key: "cancelled", label: "Annulées" }
+      ];
+
+      /* ---------------- Demo data (preview only, shown only if Firebase is unconfigured) ---------------- */
+      var DEMO_ORDERS = {
+        "demo-1": {
+          table: 3, status: "new", total: 50, createdAt: Date.now() - 4 * 60000,
+          note: "Sans oignon, sauce en plus",
+          items: [
+            { name: "Tacos poulet L", name_fr: "Tacos poulet L", price: 32, qty: 1 },
+            { name: "Soda", name_fr: "Soda", price: 8, qty: 2 },
+            { name: "Café", name_fr: "Café", price: 7, qty: 1 }
+          ]
+        },
+        "demo-2": {
+          table: 5, status: "preparing", mode: "emporter", total: 35, createdAt: Date.now() - 11 * 60000,
+          items: [
+            { name: "Double cheese", name_fr: "Double cheese", price: 35, qty: 1 }
+          ]
+        },
+        "demo-3": {
+          table: 1, status: "served", paid: false, total: 43, createdAt: Date.now() - 26 * 60000,
+          items: [
+            { name: "Margherita", name_fr: "Margherita", price: 30, qty: 1 },
+            { name: "Tiramisu", name_fr: "Tiramisu", price: 15, qty: 1 },
+            { name: "Eau", name_fr: "Eau", price: 5, qty: 1 }
+          ]
+        }
+      };
+
+      /* ---------------- Helpers ---------------- */
+      function esc(s) {
+        return String(s == null ? "" : s)
+          .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+      }
+      function fmt(n) {
+        n = Number(n) || 0;
+        return (n % 1 === 0) ? String(n) : n.toFixed(2);
+      }
+      function itemsArray(order) {
+        var it = order.items;
+        if (!it) return [];
+        if (Array.isArray(it)) return it;
+        return Object.keys(it).sort().map(function (k) { return it[k]; });
+      }
+      function orderTotal(order) {
+        if (typeof order.total === "number") return order.total;
+        return itemsArray(order).reduce(function (s, i) { return s + (Number(i.price) || 0) * (Number(i.qty) || 1); }, 0);
+      }
+      function timeLabel(ts) {
+        if (!ts) return "—";
+        var d = new Date(ts);
+        return d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+      }
+      function elapsedLabel(ts) {
+        if (!ts) return "";
+        var min = Math.max(0, Math.round((Date.now() - ts) / 60000));
+        if (min < 1) return "à l'instant";
+        if (min < 60) return "il y a " + min + " min";
+        var h = Math.floor(min / 60), m = min % 60;
+        return "il y a " + h + " h" + (m ? " " + (m < 10 ? "0" : "") + m : "");
+      }
+      function sortedOrders() {
+        return Object.keys(orders).map(function (id) {
+          var o = orders[id]; o._id = id; return o;
+        }).sort(function (a, b) { return (b.createdAt || 0) - (a.createdAt || 0); });
+      }
+
+      /* ---------------- Sound (Web Audio, no file) ---------------- */
+      function ensureAudio() {
+        if (!audioCtx) {
+          try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { audioCtx = null; }
+        }
+        if (audioCtx && audioCtx.state === "suspended") { audioCtx.resume(); }
+      }
+      document.addEventListener("pointerdown", ensureAudio, { passive: true });
+      document.addEventListener("keydown", ensureAudio);
+
+      function beep() {
+        if (!soundOn) return;
+        ensureAudio();
+        if (!audioCtx) return;
+        var t0 = audioCtx.currentTime;
+        [[1046.5, 0], [1318.5, 0.22], [1046.5, 0.55], [1318.5, 0.77]].forEach(function (pair) {
+          var osc = audioCtx.createOscillator();
+          var gain = audioCtx.createGain();
+          osc.type = "sine";
+          osc.frequency.value = pair[0];
+          var start = t0 + pair[1];
+          gain.gain.setValueAtTime(0.0001, start);
+          gain.gain.exponentialRampToValueAtTime(0.5, start + 0.02);
+          gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.2);
+          osc.connect(gain); gain.connect(audioCtx.destination);
+          osc.start(start); osc.stop(start + 0.22);
+        });
+      }
+
+      var soundBtn = document.getElementById("soundToggle");
+      soundBtn.addEventListener("click", function () {
+        soundOn = !soundOn;
+        soundBtn.classList.toggle("off", !soundOn);
+        document.getElementById("soundLabel").textContent = soundOn ? "Son activé" : "Son coupé";
+        if (soundOn) beep();
+      });
+
+      /* ---------------- Connection status ---------------- */
+      var connEl = document.getElementById("connStatus");
+      var connText = document.getElementById("connText");
+      function setConn(state, label) {
+        connEl.className = "conn " + state;
+        connText.textContent = label;
+      }
+
+      /* ---------------- Rendering ---------------- */
+      function orderCard(o, inDone) {
+        var st = o.status || "new";
+        var flow = STATUS_FLOW[st] || STATUS_FLOW["new"];
+        var items = itemsArray(o).map(function (i) {
+          var qty = Number(i.qty) || 1;
+          var price = Number(i.price) || 0;
+          var unit = qty > 1 ? ' <small>· ' + fmt(price) + ' DH × ' + qty + '</small>' : '';
+          var ar = i.name_ar || (DISH_BY_ID[i.id] || {}).name_ar || '';
+          return '<li><span class="qty">×' + qty + '</span>' +
+            '<span class="iname" dir="auto">' + esc(i.name || "") +
+            (i.name_fr ? '<small dir="auto">' + esc(i.name_fr) + '</small>' : '') +
+            (ar ? '<small dir="rtl">' + esc(ar) + '</small>' : '') +
+            '</span><span class="iprice">' + fmt(price * qty) + ' DH' + unit + '</span></li>';
+        }).join("");
+        var isTakeaway = o.mode === "emporter";
+        var modeBadge = isTakeaway
+          ? '<span class="mode-badge emporter">🥡 À emporter</span>'
+          : '<span class="mode-badge surplace">🍽️ Sur place</span>';
+        var chips = '<span class="chip st-' + st + '"><span class="dot"></span>' + esc(flow.chip) + '</span>';
+        if (demoMode) chips += ' <span class="chip demo">DÉMO</span>';
+        if (st === "served" && o.paid) chips += ' <span class="chip paid">Payée</span>';
+        var foot;
+        if (flow.next) {
+          // Active order: small cancel button (two-tap confirm) next to the advance button.
+          var confirmingCancel = cancelConfirm[o._id] && (Date.now() - cancelConfirm[o._id] < 4000);
+          foot = '<button class="cancel-btn' + (confirmingCancel ? ' confirm' : '') + '" type="button" data-cancel="' + esc(o._id) + '">' +
+            (confirmingCancel ? 'Annuler cette commande ?' : '✕ Annuler') + '</button>' +
+            '<button class="advance-btn" type="button" data-advance="' + esc(o._id) + '" data-next="' + flow.next + '">' +
+            '<span class="darija">' + esc(flow.btnDarija) + '</span>' +
+            '<span class="fr">' + esc(flow.btnFr) + '</span></button>';
+        } else {
+          // Finished orders only (served or cancelled): note + delete button. Active orders never get one.
+          var confirmingDel = deleteConfirm[o._id] && (Date.now() - deleteConfirm[o._id] < 4000);
+          var note = st === "cancelled" ? 'Commande annulée' : (o.paid ? 'Payée ✓' : 'Servie — en attente de paiement');
+          foot = '<span class="served-note">' + note + '</span>' +
+            '<button class="delete-btn' + (confirmingDel ? ' confirm' : '') + '" type="button" data-delete="' + esc(o._id) + '">' +
+            (confirmingDel ? 'Supprimer cette commande ?' : '🗑 Supprimer') + '</button>';
+        }
+        return '<article class="card st-' + st + (flashIds[o._id] ? ' flash' : '') + (inDone && o.paid ? ' is-paid' : '') + '">' +
+          '<div class="card-head">' +
+            '<div class="table-main"><div class="table-num">Table ' + esc(o.table != null ? o.table : "?") + '</div>' + modeBadge + '</div>' +
+            '<div>' + chips + '</div>' +
+            '<div class="card-meta"><div class="card-time">' + timeLabel(o.createdAt) + '</div>' +
+            '<div class="card-elapsed">' + elapsedLabel(o.createdAt) + '</div></div>' +
+          '</div>' +
+          '<ul class="items">' + items + '</ul>' +
+          ((o.note && String(o.note).trim()) ? '<div class="order-note" dir="auto">📝 Note : ' + esc(o.note) + '</div>' : '') +
+          '<div class="card-foot"><div class="total">Total<strong>' + fmt(orderTotal(o)) + ' DH</strong></div>' + foot + '</div>' +
+        '</article>';
+      }
+
+      function renderTabs(counts) {
+        document.getElementById("tabs").innerHTML = FILTERS.map(function (f) {
+          return '<button type="button" class="tab' + (currentFilter === f.key ? ' active' : '') +
+            '" data-filter="' + f.key + '">' + f.label +
+            '<span class="count">' + counts[f.key] + '</span></button>';
+        }).join("");
+      }
+
+      function renderBills() {
+        var list = sortedOrders();
+        var grand = 0;
+        var html = "";
+        for (var t = 1; t <= 6; t++) {
+          var owed = 0, servedCount = 0, activeCount = 0;
+          list.forEach(function (o) {
+            if (Number(o.table) !== t) return;
+            if (o.status === "served" && !o.paid) { owed += orderTotal(o); servedCount++; }
+            else if (o.status !== "served" && o.status !== "cancelled") { activeCount++; }
+          });
+          grand += owed;
+          var detail = [];
+          if (servedCount) detail.push(servedCount + " servie" + (servedCount > 1 ? "s" : "") + " à payer");
+          if (activeCount) detail.push(activeCount + " en cours");
+          var confirming = payConfirm[t] && (Date.now() - payConfirm[t] < 3500);
+          html += '<div class="bill-card' + (owed > 0 ? ' owes' : '') + '">' +
+            '<div class="bill-info"><div class="bill-table">Table ' + t +
+            (activeCount ? '<span class="live-dot" title="Commande en cours"></span>' : '') + '</div>' +
+            '<div class="bill-detail">' + (detail.length ? esc(detail.join(" · ")) : "Rien à payer") + '</div></div>' +
+            '<div class="bill-amount' + (owed > 0 ? '' : ' zero') + '">' + fmt(owed) + ' DH</div>' +
+            '<button type="button" class="pay-btn' + (confirming ? ' confirm' : '') + '" data-pay="' + t + '"' +
+            (owed > 0 ? '' : ' disabled') + '>' + (confirming ? "Confirmer ?" : "Payé") + '</button></div>';
+        }
+        document.getElementById("billsGrid").innerHTML = html;
+        document.getElementById("billsGrandTotal").textContent = fmt(grand) + " DH";
+      }
+
+      function renderTables() {
+        var list = sortedOrders();
+        var html = "";
+        for (var t = 1; t <= 6; t++) {
+          var owed = 0, hasNew = false, hasPrep = false, activeCount = 0;
+          list.forEach(function (o) {
+            if (Number(o.table) !== t) return;
+            var st = o.status || "new";
+            if (st === "served" && !o.paid) { owed += orderTotal(o); }
+            else if (st !== "served" && st !== "cancelled") {
+              activeCount++;
+              if (st === "new") hasNew = true;
+              else if (st === "preparing" || st === "ready") hasPrep = true;
+            }
+          });
+          // Priorité : addition impayée > commande nouvelle > en préparation/prête > libre.
+          var cls, label;
+          if (owed > 0) { cls = "owed"; label = "Khassha t-khls"; }
+          else if (hasNew) { cls = "new"; label = "Commande jdida"; }
+          else if (hasPrep) { cls = "prep"; label = "Kay-t-wjed"; }
+          else { cls = "free"; label = "Libre"; }
+          var detail = [];
+          if (owed > 0) detail.push(fmt(owed) + " DH à payer");
+          if (activeCount) detail.push(activeCount + " commande" + (activeCount > 1 ? "s" : "") + " en cours");
+          html += '<div class="table-tile st-' + cls + '">' +
+            '<div class="tt-num">Table ' + t + '</div>' +
+            '<div class="tt-state">' + label + '</div>' +
+            (detail.length ? '<div class="tt-detail">' + esc(detail.join(" · ")) + '</div>' : '') +
+            '</div>';
+        }
+        document.getElementById("tablesGrid").innerHTML = html;
+      }
+
+      function renderTopPlats() {
+        // Top plats du jour — commandes SERVIES uniquement (jamais les annulées),
+        // classés par quantité totale, top 5.
+        var now = new Date();
+        var dayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+        var dayEnd = dayStart + 86400000;
+        var totals = {};
+        Object.keys(orders).forEach(function (id) {
+          var o = orders[id];
+          if ((o.status || "new") !== "served") return;
+          var ts = Number(o.createdAt) || 0;
+          if (ts < dayStart || ts >= dayEnd) return;
+          itemsArray(o).forEach(function (i) {
+            var name = String(i.name || "").trim();
+            if (!name) return;
+            totals[name] = (totals[name] || 0) + (Number(i.qty) || 1);
+          });
+        });
+        var ranked = Object.keys(totals).map(function (name) {
+          return { name: name, qty: totals[name] };
+        }).sort(function (a, b) { return b.qty - a.qty; }).slice(0, 5);
+        var el = document.getElementById("topPlatsList");
+        if (!ranked.length) {
+          el.innerHTML = '<div class="tp-empty">Aucun plat servi aujourd\'hui pour le moment.</div>';
+          return;
+        }
+        el.innerHTML = ranked.map(function (r, i) {
+          return '<div class="tp-row"><div class="tp-rank">' + (i + 1) + '</div>' +
+            '<div class="tp-name" dir="auto">' + esc(r.name) + (((DISH_BY_NAME[r.name] || {}).name_ar) ? '<small dir="rtl">' + esc(DISH_BY_NAME[r.name].name_ar) + '</small>' : '') + '</div>' +
+            '<div class="tp-qty">× ' + r.qty + '</div></div>';
+        }).join("");
+      }
+
+      function todayBounds() {
+        var now = new Date();
+        var start = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+        return { start: start, end: start + 86400000 };
+      }
+
+      function renderStats() {
+        // Statistiques du jour — toujours affichées, même avec zéro commande
+        // (les cartes HTML portent déjà "0" / "0 DH" par défaut).
+        var b = todayBounds();
+        var list = sortedOrders();
+        var counts = { orders: 0, preparing: 0, ready: 0, served: 0, cancelled: 0 };
+        var totalDH = 0, paidDH = 0;
+        var seenCancelled = {};
+        list.forEach(function (o) {
+          var ts = Number(o.createdAt) || 0;
+          if (ts < b.start || ts >= b.end) return;
+          var st = o.status || "new";
+          counts.orders++;
+          if (st === "preparing") counts.preparing++;
+          else if (st === "ready") counts.ready++;
+          else if (st === "served") { counts.served++; if (o.paid) paidDH += orderTotal(o); }
+          else if (st === "cancelled") { counts.cancelled++; seenCancelled[o._id] = true; }
+          if (st !== "cancelled") totalDH += orderTotal(o);
+        });
+        // Annulations conservées dans demo-cancelled mais déjà supprimées de demo-orders.
+        Object.keys(cancelled || {}).forEach(function (id) {
+          if (seenCancelled[id]) return;
+          var c = cancelled[id] || {};
+          var ts = Number(c.createdAt) || Number(c.cancelledAt) || 0;
+          if (ts < b.start || ts >= b.end) return;
+          counts.orders++;
+          counts.cancelled++;
+        });
+        function setStat(id, v) { var el = document.getElementById(id); if (el) el.textContent = v; }
+        setStat("statOrders", String(counts.orders));
+        setStat("statPreparing", String(counts.preparing));
+        setStat("statReady", String(counts.ready));
+        setStat("statServed", String(counts.served));
+        setStat("statCancelled", String(counts.cancelled));
+        setStat("statTotal", fmt(totalDH) + " DH");
+        setStat("statPaid", fmt(paidDH) + " DH");
+      }
+
+      function renderAvailability() {
+        var outCount = 0;
+        var html = MENU.map(function (cat) {
+          var rows = cat.items.map(function (it) {
+            var avail = availability[it.id] !== false;
+            if (!avail) outCount++;
+            return '<div class="avail-row' + (avail ? '' : ' is-out') + '">' +
+              '<div class="avail-name" dir="auto">' + esc(it.name) + (it.name_ar ? ' <small dir="rtl" class="avail-name-ar">' + esc(it.name_ar) + '</small>' : '') + '</div>' +
+              '<button type="button" class="avail-btn ' + (avail ? 'on' : 'off') + '" data-avail="' + esc(it.id) + '">' +
+              (avail ? 'Disponible' : 'Makaynch') + '</button></div>';
+          }).join("");
+          return '<div class="avail-cat"><div class="avail-cat-name">' + esc(cat.fr) + '</div>' + rows + '</div>';
+        }).join("");
+        document.getElementById("availBody").innerHTML = html;
+        document.getElementById("availCount").textContent = outCount ? "(" + outCount + " makaynch)" : "";
+      }
+
+      function render() {
+        var list = sortedOrders();
+        var counts = { all: list.length, "new": 0, preparing: 0, ready: 0, served: 0, cancelled: 0 };
+        list.forEach(function (o) {
+          var st = o.status || "new";
+          if (counts[st] != null) counts[st]++;
+        });
+        renderTabs(counts);
+
+        var mainOrders, doneOrders = [];
+        if (currentFilter === "served") {
+          mainOrders = list.filter(function (o) { return o.status === "served"; });
+        } else if (currentFilter === "cancelled") {
+          mainOrders = list.filter(function (o) { return o.status === "cancelled"; });
+        } else if (currentFilter === "all") {
+          mainOrders = list.filter(function (o) { return o.status !== "served" && o.status !== "cancelled"; });
+          doneOrders = list.filter(function (o) { return o.status === "served" || o.status === "cancelled"; });
+        } else {
+          mainOrders = list.filter(function (o) { return (o.status || "new") === currentFilter; });
+        }
+
+        document.getElementById("ordersList").innerHTML =
+          mainOrders.map(function (o) { return orderCard(o, false); }).join("");
+        document.getElementById("emptyState").hidden = mainOrders.length > 0;
+
+        var doneSection = document.getElementById("doneSection");
+        if (currentFilter === "all" && doneOrders.length > 0) {
+          doneSection.hidden = false;
+          document.getElementById("doneCount").textContent = "(" + doneOrders.length + ")";
+          document.getElementById("doneBody").innerHTML =
+            doneOrders.map(function (o) { return orderCard(o, true); }).join("");
+          var clearBtn = document.getElementById("clearAllBtn");
+          var confirmingClear = clearAllConfirmTs && (Date.now() - clearAllConfirmTs < 4000);
+          clearBtn.classList.toggle("confirm", !!confirmingClear);
+          clearBtn.textContent = confirmingClear ? "Effacer toutes les commandes terminées ?" : "🗑 Tout effacer";
+        } else {
+          doneSection.hidden = true;
+        }
+        renderBills();
+        renderTables();
+        renderTopPlats();
+        renderStats();
+        // Flash only once: clear flags after they have been painted.
+        var hadFlash = Object.keys(flashIds).length > 0;
+        if (hadFlash) { setTimeout(function () { flashIds = {}; }, 4600); }
+      }
+
+      /* ---------------- Actions ---------------- */
+      var ordersRef = null;
+      var cancelledRef = null;
+
+      function setStatus(id, next) {
+        if (demoMode) {
+          if (orders[id]) { orders[id].status = next; render(); }
+          return;
+        }
+        if (ordersRef) { ordersRef.child(id).update({ status: next }); }
+      }
+      function deleteOrder(id) {
+        // Safety: only a finished order (served or cancelled) can ever be deleted.
+        // Deletes ONLY /demo-orders/<id> — never touches /demo-cancelled/<id>, which stays as stats history.
+        if (!orders[id] || (orders[id].status !== "served" && orders[id].status !== "cancelled")) return;
+        if (demoMode) {
+          delete orders[id];
+          delete knownIds[id];
+          render();
+          return;
+        }
+        if (ordersRef) { ordersRef.child(id).remove(); }
+      }
+      function deleteAllServed() {
+        // Only clears /demo-orders — /demo-cancelled history is intentionally preserved for stats.
+        var updates = {};
+        var removed = false;
+        Object.keys(orders).forEach(function (id) {
+          if (orders[id].status === "served" || orders[id].status === "cancelled") {
+            removed = true;
+            if (demoMode) { delete orders[id]; delete knownIds[id]; }
+            else { updates[id] = null; }
+          }
+        });
+        if (!removed) return;
+        if (demoMode) { render(); return; }
+        if (ordersRef) { ordersRef.update(updates); }
+      }
+      function markTablePaid(table) {
+        var updates = {};
+        Object.keys(orders).forEach(function (id) {
+          var o = orders[id];
+          if (Number(o.table) === table && o.status === "served" && !o.paid) {
+            if (demoMode) { o.paid = true; }
+            else { updates[id + "/paid"] = true; }
+          }
+        });
+        if (demoMode) { render(); return; }
+        if (ordersRef && Object.keys(updates).length) { ordersRef.update(updates); }
+      }
+
+      document.addEventListener("click", function (e) {
+        var adv = e.target.closest("[data-advance]");
+        if (adv) { setStatus(adv.getAttribute("data-advance"), adv.getAttribute("data-next")); return; }
+        var can = e.target.closest("[data-cancel]");
+        if (can) {
+          var canId = can.getAttribute("data-cancel");
+          if (cancelConfirm[canId] && Date.now() - cancelConfirm[canId] < 4000) {
+            delete cancelConfirm[canId];
+            // Durable cancellation record for stats: snapshot to /demo-cancelled/<id>
+            // before marking cancelled, so deleting the order later never erases the stat.
+            // Real Firebase mode only — demo mode writes nothing.
+            if (!demoMode && cancelledRef && orders[canId]) {
+              var cancelSnap = orders[canId];
+              cancelledRef.child(canId).set({
+                table: cancelSnap.table != null ? cancelSnap.table : null,
+                total: orderTotal(cancelSnap),
+                items: cancelSnap.items || [],
+                mode: cancelSnap.mode || "surplace",
+                createdAt: cancelSnap.createdAt || null,
+                cancelledAt: firebase.database.ServerValue.TIMESTAMP
+              });
+            }
+            setStatus(canId, "cancelled");
+          } else {
+            cancelConfirm[canId] = Date.now();
+            render();
+            setTimeout(function () { if (cancelConfirm[canId]) { delete cancelConfirm[canId]; render(); } }, 4100);
+          }
+          return;
+        }
+        var del = e.target.closest("[data-delete]");
+        if (del) {
+          var delId = del.getAttribute("data-delete");
+          if (deleteConfirm[delId] && Date.now() - deleteConfirm[delId] < 4000) {
+            delete deleteConfirm[delId];
+            deleteOrder(delId);
+          } else {
+            deleteConfirm[delId] = Date.now();
+            render();
+            setTimeout(function () { if (deleteConfirm[delId]) { delete deleteConfirm[delId]; render(); } }, 4100);
+          }
+          return;
+        }
+        if (e.target.closest("#clearAllBtn")) {
+          if (clearAllConfirmTs && Date.now() - clearAllConfirmTs < 4000) {
+            clearAllConfirmTs = 0;
+            deleteAllServed();
+          } else {
+            clearAllConfirmTs = Date.now();
+            render();
+            setTimeout(function () { if (clearAllConfirmTs) { clearAllConfirmTs = 0; render(); } }, 4100);
+          }
+          return;
+        }
+        var av = e.target.closest("[data-avail]");
+        if (av) {
+          // Mode démo : les boutons s'affichent mais n'écrivent rien.
+          if (demoMode || !availRef) return;
+          var avId = av.getAttribute("data-avail");
+          var newVal = availability[avId] === false; // Makaynch -> Disponible, sinon -> Makaynch
+          availability[avId] = newVal;
+          renderAvailability();
+          availRef.child(avId).set(newVal);
+          return;
+        }
+        var tab = e.target.closest("[data-filter]");
+        if (tab) { currentFilter = tab.getAttribute("data-filter"); render(); return; }
+        var pay = e.target.closest("[data-pay]");
+        if (pay && !pay.disabled) {
+          var t = Number(pay.getAttribute("data-pay"));
+          if (payConfirm[t] && Date.now() - payConfirm[t] < 3500) {
+            delete payConfirm[t];
+            markTablePaid(t);
+          } else {
+            payConfirm[t] = Date.now();
+            render();
+            setTimeout(function () { if (payConfirm[t]) { delete payConfirm[t]; render(); } }, 3600);
+          }
+        }
+      });
+
+      document.getElementById("doneToggle").addEventListener("click", function () {
+        document.getElementById("doneSection").classList.toggle("open");
+      });
+      document.getElementById("availToggle").addEventListener("click", function () {
+        document.getElementById("availSection").classList.toggle("open");
+      });
+
+      /* Refresh elapsed-time labels every 30 s */
+      setInterval(render, 30000);
+
+      /* ---------------- Boot ---------------- */
+      /* Rendu immédiat (zéros) : les statistiques sont visibles tout de suite,
+         même avant la première réponse Firebase. */
+      render();
+      renderAvailability();
+      var sdkMissing = (typeof firebase === "undefined");
+      if (demoMode || sdkMissing) {
+        demoMode = true;
+        document.getElementById("configBanner").hidden = false;
+        setConn("unconf", sdkMissing ? "Mode démo (Firebase indisponible)" : "Firebase non configuré");
+        orders = JSON.parse(JSON.stringify(DEMO_ORDERS));
+        // Make demo timestamps fresh relative to now.
+        Object.keys(orders).forEach(function (id, i) {
+          orders[id].createdAt = Date.now() - [4, 11, 26][i] * 60000;
+        });
+        Object.keys(orders).forEach(function (id) { knownIds[id] = true; });
+        firstSyncDone = true;
+        render();
+        renderAvailability();
+      } else {
+        try {
+          firebase.initializeApp(FIREBASE_CONFIG);
+          var db = firebase.database();
+          /* Nœuds DÉMO uniquement — jamais les nœuds live. */
+          ordersRef = db.ref("demo-orders");
+          cancelledRef = db.ref("demo-cancelled");
+          availRef = db.ref("demo-availability");
+          renderAvailability();
+          availRef.on("value", function (snap) {
+            availability = snap.val() || {};
+            renderAvailability();
+          });
+          setConn("", "Connexion…");
+          db.ref(".info/connected").on("value", function (snap) {
+            if (snap.val() === true) { setConn("ok", "Connecté"); }
+            else { setConn("bad", "Déconnecté"); }
+          });
+          ordersRef.on("value", function (snap) {
+            var val = snap.val() || {};
+            if (firstSyncDone) {
+              Object.keys(val).forEach(function (id) {
+                if (!knownIds[id] && ((val[id] || {}).status || "new") === "new") {
+                  flashIds[id] = true;
+                  beep();
+                }
+              });
+            }
+            orders = val;
+            Object.keys(val).forEach(function (id) { knownIds[id] = true; });
+            firstSyncDone = true;
+            render();
+          }, function () {
+            setConn("bad", "Déconnecté");
+          });
+          cancelledRef.on("value", function (snap) {
+            cancelled = snap.val() || {};
+            render();
+          });
+        } catch (err) {
+          setConn("bad", "Erreur Firebase");
+        }
+      }
+    </script>
+  </body>
+</html>

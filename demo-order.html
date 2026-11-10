@@ -721,7 +721,7 @@ function renderMenu(){
       var soldBadge = document.createElement('span');
       soldBadge.className = 'soldout-badge';
       soldBadge.id = 'soldout-' + item.id;
-      soldBadge.textContent = 'Makaynch';
+      soldBadge.textContent = 'Indisponible';
       side.appendChild(soldBadge);
 
       var badge = document.createElement('span');
@@ -763,7 +763,7 @@ function renderMenu(){
   });
 }
 
-/* ---------------- Availability (sold-out / Makaynch) ---------------- */
+/* ---------------- Availability (sold-out / Indisponible) ---------------- */
 /* Écoute demo-availability — JAMAIS le nœud live /availability. */
 function isAvailable(id){
   return availability[id] !== false;

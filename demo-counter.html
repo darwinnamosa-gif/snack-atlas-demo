@@ -909,12 +909,12 @@
             return '<div class="avail-row' + (avail ? '' : ' is-out') + '">' +
               '<div class="avail-name" dir="auto">' + esc(it.name) + (it.name_ar ? ' <small dir="rtl" class="avail-name-ar">' + esc(it.name_ar) + '</small>' : '') + '</div>' +
               '<button type="button" class="avail-btn ' + (avail ? 'on' : 'off') + '" data-avail="' + esc(it.id) + '">' +
-              (avail ? 'Disponible' : 'Makaynch') + '</button></div>';
+              (avail ? 'Disponible' : 'Indisponible') + '</button></div>';
           }).join("");
           return '<div class="avail-cat"><div class="avail-cat-name">' + esc(cat.fr) + '</div>' + rows + '</div>';
         }).join("");
         document.getElementById("availBody").innerHTML = html;
-        document.getElementById("availCount").textContent = outCount ? "(" + outCount + " makaynch)" : "";
+        document.getElementById("availCount").textContent = outCount ? "(" + outCount + " indisponible" + (outCount > 1 ? "s" : "") + ")" : "";
       }
 
       function render() {
@@ -1074,7 +1074,7 @@
           // Mode démo : les boutons s'affichent mais n'écrivent rien.
           if (demoMode || !availRef) return;
           var avId = av.getAttribute("data-avail");
-          var newVal = availability[avId] === false; // Makaynch -> Disponible, sinon -> Makaynch
+          var newVal = availability[avId] === false; // Indisponible -> Disponible, sinon -> Indisponible
           availability[avId] = newVal;
           renderAvailability();
           availRef.child(avId).set(newVal);

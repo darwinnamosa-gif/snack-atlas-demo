@@ -8,6 +8,7 @@
 <title>Snack Atlas — Commander à table (DÉMO)</title>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <style>
   :root{
     --yellow:#F5A900; --yellow-2:#FFC93C; --yellow-soft:#FFF3D6;
@@ -778,6 +779,7 @@ function applyAvailability(){
 }
 function startAvailabilityListener(){
   if (availabilityListening) return;
+  if (authState !== 'ok') return; /* wait for anonymous sign-in first */
   if (!firebaseConfigured()) return; /* demo mode: everything stays available */
   try {
     getDb().ref('demo-availability').on('value', function(snap){
@@ -917,6 +919,38 @@ function getDb(){
   return firebaseDb;
 }
 
+/* ---------------- Anonymous Auth ----------------
+   The database rules require a signed-in user (auth != null).
+   Sign in anonymously on load, BEFORE any database read/write.
+   Listeners and writes only start once a user exists. If sign-in
+   fails, the page keeps its honest error state (errorBox) and
+   never writes fake data or shows a fake success. */
+var authState = 'pending'; /* 'pending' | 'ok' | 'failed' */
+var authWaiters = [];
+function setAuthState(s){
+  authState = s;
+  var w = authWaiters; authWaiters = [];
+  w.forEach(function(fn){ try { fn(s === 'ok'); } catch(e){} });
+}
+function waitForAuth(timeoutMs){
+  return new Promise(function(resolve){
+    if (authState !== 'pending') { resolve(authState === 'ok'); return; }
+    authWaiters.push(resolve);
+    setTimeout(function(){ resolve(authState === 'ok'); }, timeoutMs || 6000);
+  });
+}
+function initAuth(){
+  if (!firebaseConfigured()) { setAuthState('failed'); return; }
+  try {
+    if (typeof firebase === 'undefined' || typeof firebase.auth !== 'function') { setAuthState('failed'); return; }
+    getDb(); /* initializeApp first — auth needs the app */
+    firebase.auth().onAuthStateChanged(function(user){
+      if (user) { setAuthState('ok'); startAvailabilityListener(); }
+    });
+    firebase.auth().signInAnonymously().catch(function(){ setAuthState('failed'); });
+  } catch(e) { setAuthState('failed'); }
+}
+
 function confirmOrder(){
   if (sending) return;
   errorBox.classList.remove('show');
@@ -938,6 +972,21 @@ function confirmOrder(){
   confirmBtn.disabled = true;
   confirmBtn.textContent = 'Envoi en cours…';
 
+  /* Anonymous sign-in gates the write: wait for it (usually <1 s).
+     On failure, show the honest error — never a fake success. */
+  waitForAuth(6000).then(function(authOk){
+    if (!authOk) {
+      sending = false;
+      confirmBtn.disabled = false;
+      confirmBtn.textContent = 'Confirmer la commande';
+      errorBox.classList.add('show');
+      return;
+    }
+    sendOrder(items, total, table, mode, note);
+  });
+}
+
+function sendOrder(items, total, table, mode, note){
   var order = {
     table: table,
     items: items,
@@ -989,7 +1038,8 @@ function confirmOrder(){
 buildPicker();
 renderMenu();
 applyAvailability();
-startAvailabilityListener();
+initAuth(); /* anonymous sign-in first; listeners start once signed in */
+startAvailabilityListener(); /* no-op until auth succeeds */
 setMode('surplace');
 modeSurplaceBtn.addEventListener('click', function(){ setMode('surplace'); });
 modeEmporterBtn.addEventListener('click', function(){ setMode('emporter'); });

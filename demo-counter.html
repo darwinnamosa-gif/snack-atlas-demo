@@ -2385,6 +2385,14 @@
       var pinSubmit = document.getElementById("pinSubmit");
       var pinWait = document.getElementById("pinWait");
 
+      /* Informe l'APK Comptoir (pont "AndroidBridge") que le bouton
+         natif 📊 STATS doit être visible ou caché. Sans APK, ce pont
+         n'existe pas : l'appel est ignoré et la page marche pareil. */
+      function notifyStatsVisible(visible) {
+        if (window.AndroidBridge && window.AndroidBridge.setStatsVisible) {
+          window.AndroidBridge.setStatsVisible(!!visible);
+        }
+      }
       function isUnlocked() {
         try { return localStorage.getItem(UNLOCK_KEY) === "1"; } catch (e) { return false; }
       }
@@ -2394,6 +2402,7 @@
       function showAppAndStart() {
         pinGate.hidden = true;
         appWrap.hidden = false;
+        notifyStatsVisible(true);
         startCounter();
       }
       function getLockoutUntil() {
@@ -2446,6 +2455,7 @@
           pinInput.value = "";
           showAppAndStart();
         } else {
+          notifyStatsVisible(false);
           pinError.hidden = false;
           pinInput.value = "";
           pinForm.classList.remove("shake");
@@ -2459,6 +2469,7 @@
          verrouillage de 30 s en cours) et recharge la page : le portail
          de code réapparaît. Le PIN ne se change que dans ce fichier. */
       document.getElementById("lockBtn").addEventListener("click", function () {
+        notifyStatsVisible(false);
         try {
           localStorage.removeItem(UNLOCK_KEY);
           localStorage.removeItem(LOCKOUT_KEY);
@@ -2475,6 +2486,7 @@
       if (isUnlocked()) {
         showAppAndStart();
       } else {
+        notifyStatsVisible(false);
         appWrap.hidden = true;
         pinGate.hidden = false;
         if (isLockedOut()) {

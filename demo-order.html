@@ -6,6 +6,17 @@
 <meta name="color-scheme" content="light" />
 <link rel="icon" href="data:," />
 <title>Snack Atlas — Commander à table (DÉMO)</title>
+<script>
+(function(){
+  try {
+    var _t = new URLSearchParams(window.location.search).get('t');
+    window.__SNACKATLAS_TOKEN_OK = (_t === '66c2298b62dff44a');
+  } catch(e) { window.__SNACKATLAS_TOKEN_OK = false; }
+  if (!window.__SNACKATLAS_TOKEN_OK) {
+    document.documentElement.classList.add('snackatlas-blocked');
+  }
+})();
+</script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
@@ -333,9 +344,53 @@
     *{ transition:none !important; animation:none !important; }
   }
 
+
+  /* ---------- QR Token Gate (blocked) ---------- */
+  #qrGate{ display:none; }
+  html.snackatlas-blocked body{ background:#241611; overflow:hidden; }
+  html.snackatlas-blocked body > *:not(#qrGate){ display:none !important; }
+  html.snackatlas-blocked #qrGate{
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    position:fixed; inset:0; z-index:9999;
+    background:
+      radial-gradient(ellipse 90% 55% at 50% -5%, rgba(245,169,0,.38) 0%, rgba(245,169,0,0) 62%),
+      linear-gradient(180deg, #2B1A12 0%, #241611 55%, #1A0F09 100%);
+    color:#fff; text-align:center; padding:32px 22px calc(32px + env(safe-area-inset-bottom));
+  }
+  .qr-gate-kicker{
+    font-size:12.5px; font-weight:800; letter-spacing:.18em; text-transform:uppercase;
+    color:var(--yellow-2); opacity:.9; margin:0 0 10px;
+  }
+  .qr-gate-title{
+    margin:0; font-family:"Arial Black", system-ui, sans-serif; font-weight:900;
+    font-size:clamp(48px, 14vw, 84px); line-height:.95; letter-spacing:-.01em; color:#fff;
+  }
+  .qr-gate-title .hl{ background:var(--yellow); color:#2B1A12; padding:2px 12px; border-radius:12px; }
+  .qr-gate-icon{
+    width:92px; height:92px; margin:30px auto 22px;
+    border:2px solid rgba(255,201,60,.55); border-radius:22px;
+    display:flex; align-items:center; justify-content:center;
+    background:rgba(245,169,0,.08);
+  }
+  .qr-gate-icon svg{ width:52px; height:52px; }
+  .qr-gate-text{
+    margin:0; max-width:340px;
+    font-size:20px; font-weight:800; line-height:1.45; color:#fff;
+  }
 </style>
 </head>
 <body>
+
+<!-- QR Token Gate — shown only when the QR token is missing/invalid.
+     The gate check in <head> runs FIRST, before any Firebase init or menu render. -->
+<div id="qrGate" role="main" aria-label="Snack Atlas — scannez le QR code de votre table">
+  <p class="qr-gate-kicker">Snack Atlas — Démonstration</p>
+  <h1 class="qr-gate-title">SNACK <span class="hl">ATLAS</span></h1>
+  <div class="qr-gate-icon" aria-hidden="true">
+    <svg viewBox="0 0 24 24" fill="none" stroke="#FFC93C" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><rect x="7" y="7" width="3.2" height="3.2" rx=".6" fill="#FFC93C" stroke="none"/><rect x="13.8" y="7" width="3.2" height="3.2" rx=".6"/><rect x="7" y="13.8" width="3.2" height="3.2" rx=".6"/><path d="M13.8 13.8h3.2v3.2h-3.2z"/></svg>
+  </div>
+  <p class="qr-gate-text">Scannez le QR code de votre table pour commander</p>
+</div>
 
 <div class="demo-badge">DÉMO</div>
 
@@ -428,6 +483,9 @@
 </div>
 
 <script>
+/* Token gate — checked FIRST (see <head>). When the token is missing or
+   invalid, NOTHING below runs: no Firebase init, no menu render, no cart. */
+if (window.__SNACKATLAS_TOKEN_OK) {
 /* ============================================================
    FIREBASE_CONFIG — projet Firebase de démonstration.
    La démo n'utilise QUE les nœuds demo-orders et demo-availability.
@@ -1065,6 +1123,7 @@ if (initialTable !== null) {
   showPicker();
 }
 updateCartBar();
+} /* end if (__SNACKATLAS_TOKEN_OK) — blocked visitors never reach Firebase/menu code */
 </script>
 </body>
 </html>

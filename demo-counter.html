@@ -483,6 +483,7 @@
 
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
     <script>
       /* ============================================================
          FIREBASE_CONFIG — projet Firebase de démonstration.
@@ -1106,6 +1107,54 @@
       /* Refresh elapsed-time labels every 30 s */
       setInterval(render, 30000);
 
+      /* ---------------- Anonymous Auth ----------------
+         Listeners are attached ONLY after anonymous sign-in
+         (database rules require auth != null). startFirebaseListeners
+         runs once, from onAuthStateChanged. On sign-in failure the
+         page shows its honest error state ("Erreur Firebase" /
+         "Déconnecté") and never loads demo orders as if real. */
+      var listenersStarted = false;
+      function startFirebaseListeners() {
+        if (listenersStarted) return;
+        listenersStarted = true;
+        var db = firebase.database();
+        /* Nœuds DÉMO uniquement — jamais les nœuds live. */
+        ordersRef = db.ref("demo-orders");
+        cancelledRef = db.ref("demo-cancelled");
+        availRef = db.ref("demo-availability");
+        renderAvailability();
+        availRef.on("value", function (snap) {
+          availability = snap.val() || {};
+          renderAvailability();
+        });
+        setConn("", "Connexion…");
+        db.ref(".info/connected").on("value", function (snap) {
+          if (snap.val() === true) { setConn("ok", "Connecté"); }
+          else { setConn("bad", "Déconnecté"); }
+        });
+        ordersRef.on("value", function (snap) {
+          var val = snap.val() || {};
+          if (firstSyncDone) {
+            Object.keys(val).forEach(function (id) {
+              if (!knownIds[id] && ((val[id] || {}).status || "new") === "new") {
+                flashIds[id] = true;
+                beep();
+              }
+            });
+          }
+          orders = val;
+          Object.keys(val).forEach(function (id) { knownIds[id] = true; });
+          firstSyncDone = true;
+          render();
+        }, function () {
+          setConn("bad", "Déconnecté");
+        });
+        cancelledRef.on("value", function (snap) {
+          cancelled = snap.val() || {};
+          render();
+        });
+      }
+
       /* ---------------- Boot ---------------- */
       /* Rendu immédiat (zéros) : les statistiques sont visibles tout de suite,
          même avant la première réponse Firebase. */
@@ -1128,42 +1177,20 @@
       } else {
         try {
           firebase.initializeApp(FIREBASE_CONFIG);
-          var db = firebase.database();
-          /* Nœuds DÉMO uniquement — jamais les nœuds live. */
-          ordersRef = db.ref("demo-orders");
-          cancelledRef = db.ref("demo-cancelled");
-          availRef = db.ref("demo-availability");
-          renderAvailability();
-          availRef.on("value", function (snap) {
-            availability = snap.val() || {};
-            renderAvailability();
-          });
-          setConn("", "Connexion…");
-          db.ref(".info/connected").on("value", function (snap) {
-            if (snap.val() === true) { setConn("ok", "Connecté"); }
-            else { setConn("bad", "Déconnecté"); }
-          });
-          ordersRef.on("value", function (snap) {
-            var val = snap.val() || {};
-            if (firstSyncDone) {
-              Object.keys(val).forEach(function (id) {
-                if (!knownIds[id] && ((val[id] || {}).status || "new") === "new") {
-                  flashIds[id] = true;
-                  beep();
-                }
-              });
-            }
-            orders = val;
-            Object.keys(val).forEach(function (id) { knownIds[id] = true; });
-            firstSyncDone = true;
-            render();
-          }, function () {
-            setConn("bad", "Déconnecté");
-          });
-          cancelledRef.on("value", function (snap) {
-            cancelled = snap.val() || {};
-            render();
-          });
+          /* Anonymous sign-in gates ALL database access (rules: auth != null).
+             Listeners start only once a user exists; on failure the page
+             shows its honest error state and never loads demo orders. */
+          if (typeof firebase.auth === "function") {
+            setConn("", "Connexion…");
+            firebase.auth().onAuthStateChanged(function (user) {
+              if (user) startFirebaseListeners();
+            });
+            firebase.auth().signInAnonymously().catch(function () {
+              setConn("bad", "Erreur Firebase");
+            });
+          } else {
+            setConn("bad", "Erreur Firebase");
+          }
         } catch (err) {
           setConn("bad", "Erreur Firebase");
         }
